@@ -34,6 +34,7 @@
     "webpack-dev-server": "^1.16.2"
   },
   "dependencies": {
+    "R": "0.0.1",
     "antd": "^2.10.2",
     "autobind": "^1.0.3",
     "classname": "0.0.0",
