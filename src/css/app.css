@@ -1,3 +1,35 @@
 .app-container {
 	padding: 30px 0 0 0;
 }
+
+.title {
+	font-size: 20px;
+	line-height: 40px;
+	font-weight: normal;
+	text-align: center;
+}
+
+.filter-rows {
+	width: 100%;
+	padding: 5px;
+}
+
+.filter-rows .filter-item {
+	width: 100%;
+	padding: 5px 0;
+	font-size: 14px;
+}
+
+.filter-rows .filter-item .left-label {
+	display: inline-block;
+	width: 150px;
+	float: left;
+}
+
+.filter-rows .filter-item .right-select {
+	display: inline-block;
+}
+
+.filter-rows .filter-item .right-select input {
+	width: 200px;
+}

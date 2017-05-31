@@ -23,9 +23,13 @@ class Filters {
 	@action
 	addFilter(title) {
 		if (title) {
-			const filter = new FilterItem({title});
-			console.log(filter);
-			this.filterList.push(filter);
+			if (Array.isArray(title)) {
+				title.forEach((title) => {
+					this.filterList.push(new FilterItem({title}));
+				});
+			} else {
+				this.filterList.push(new FilterItem({title}));
+			}
 		}
 	}
 
@@ -33,6 +37,12 @@ class Filters {
 	@action
 	removeFilter(id) {
 		this.filterList = this.filterList.filter(item => item.id !== id);
+	}
+
+	@autobind
+	@action
+	resetFilters() {
+		this.filterList = [];
 	}
 }
 
