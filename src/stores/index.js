@@ -1,5 +1,6 @@
 import { observable, computed, action } from "mobx"
 import autobind from "autobind"
+import * as uuid from "node-uuid"
 
 /**
  * 过滤文件类型的后缀
@@ -7,19 +8,15 @@ import autobind from "autobind"
 class FilterItem {
 	constructor({title}) {
 		this.title = title;
-		this.id = Math.random().toString(16).slice(2, 10);
+		this.id = uuid.v4();
 		return this;
 	}
 }
 
-/**
- * 所有过滤项目
- */
 class Filters {
 	@observable
 	filterList = [];
-	
-	@autobind
+
 	@action
 	addFilter(title) {
 		if (title) {
@@ -33,17 +30,42 @@ class Filters {
 		}
 	}
 
-	@autobind
 	@action
 	removeFilter(id) {
 		this.filterList = this.filterList.filter(item => item.id !== id);
 	}
 
-	@autobind
 	@action
 	resetFilters() {
 		this.filterList = [];
 	}
 }
 
+class CommonStore {
+	@observable
+	fileExt = "css";
+
+	@observable
+	scale = 2;
+
+	@observable
+	width = 750;
+
+	@action
+	modifyScale(scale) {
+		this.scale = scale;
+	}
+
+	@action
+	modifyWidth(width) {
+		this.width = width;
+	}
+
+	@action
+	modifyFileExt(ext) {
+		this.fileExt = ext;
+	}
+}
+
 export const filterStore = new Filters();
+export const commonStore = new CommonStore();

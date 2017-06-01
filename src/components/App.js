@@ -1,11 +1,13 @@
 import React, { Component } from "react"
 import { observer, inject } from "mobx-react"
-// import css from "css";
 import * as uuid from "node-uuid"
 import autobind from "autobind"
-import { Switch, Select, Input } from "antd"
-const { Option } = Select;
+import { Switch, Select, Input, Button, Radio, Spin } from "antd"
+
 import { ignores } from "../config";
+
+const { Option } = Select,
+	RadioGroup = Radio.Group;
 
 const ignoreRules = ignores.map((name) => {
 	return {
@@ -15,8 +17,9 @@ const ignoreRules = ignores.map((name) => {
 });
 
 @inject([
-	"filterStore"
+	"store"
 ])
+@observer
 class Filters extends Component {
 	constructor(props) {
 		super(props);
@@ -68,7 +71,7 @@ class Filters extends Component {
 					?
 					(<div className="filter-item">
 						<label className="left-label">
-							选择规则
+							选择忽略规则
 						</label>
 						<Select
 							className="right-select"
@@ -88,33 +91,31 @@ class Filters extends Component {
 	}
 }
 
+@inject([
+	"store"
+])
+@observer
 class Scales extends Component {
   	constructor(props) {
   		super(props);
-  		this.state = {
-  			width: 750,
-  			scale: 1
-  		};
   	}
 
   	@autobind
   	_handleChange(e) {
-  		let { value } = e.target;
-  		this.setState({
-  			width: value
-  		});
+  		const { commonStore } = this.props.store,
+  			{ value } = e.target;
+  		commonStore.modifyWidth(value);
   	}
 
   	@autobind
   	_handleScaleChange(e) {
-  		let { value } = e.target;
-  		this.setState({
-  			scale: value
-  		});
+  		const { commonStore } = this.props.store,
+  			{ value } = e.target;
+  		commonStore.modifyScale(value);
   	}
 
   	render() {
-  		const { width, scale } = this.state;
+  		const { width, scale } = this.props.store.commonStore;
   		return (
   			<div className="filter-rows">
 				<div className="filter-item">
@@ -139,18 +140,83 @@ class Scales extends Component {
 }
 
 @inject([
-	"filterStore"
+	"store"
 ])
+@observer
+class FileType extends Component {
+	constructor(props) {
+		super(props);
+	}
+
+	@autobind
+	_handleChange(e) {
+		const { commonStore } = this.props.store,
+			{ value } = e.target;
+		commonStore.modifyFileExt(value);
+	}
+
+	render() {
+		const { fileExt } = this.props.store.commonStore;
+		return (
+  			<div className="filter-rows">
+				<div className="filter-item">
+					<label className="left-label">
+						文件后缀名
+					</label>
+					<div className="right-select">
+						<RadioGroup onChange={ this._handleChange } value={ fileExt }>
+					        <Radio value="css">css</Radio>
+					        <Radio value="less">less</Radio>
+					        <Radio value="sass">sass</Radio>
+				      	</RadioGroup>
+					</div>
+				</div>
+  			</div>
+		);
+	}
+}
+
+@inject([
+	"store"
+])
+@observer
 class Tranformer extends Component {
   	constructor(props) {
   		super(props);
+  		this.state = {
+  			tranforming: false
+  		};
+  	}
+
+  	@autobind
+  	_tranform() {
+  		this.setState({
+  			tranforming: true
+  		});
+  		console.log(this.props);
   	}
 
   	render() {
+  		const { tranforming } = this.state;
   		return (
 			<div className="app-container">
 	      		<Filters />
 	      		<Scales />
+	      		<FileType />
+	      		<div className="button-container">
+	      			<Button type="primary" size="large" onClick={this._tranform}>开始转换</Button>
+	      		</div>
+	      		{
+	      			tranforming
+	      			?
+	      			(
+			      		<div className="tranforming">
+			      			<Spin size="large" tip="正在转换,请稍候...." />
+			      		</div>	      				
+      				)
+      				:
+      				null
+	      		}
 	      	</div>
 		);
   	}
