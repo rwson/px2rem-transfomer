@@ -54,6 +54,15 @@ class CommonStore {
 	@observable
 	dirPath = "";
 
+	@observable
+	distPath = "";
+
+	@observable
+	compress = false;
+
+	@observable
+	fileName = "compressed.css";
+
 	@action
 	modifyScale(scale) {
 		this.scale = scale;
@@ -72,6 +81,21 @@ class CommonStore {
 	@action
 	selectDir(dir) {
 		this.dirPath = dir;
+	}
+
+	@action
+	selectDistDir(dir) {
+		this.distPath = dir;
+	}
+
+	@action
+	toggleCompress(compress) {
+		this.compress = compress;
+	}
+
+	@action
+	inputFileName(name) {
+		this.fileName = name;
 	}
 }
 

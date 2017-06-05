@@ -1,4 +1,8 @@
+import os from "os"
+import path from "path"
+
 import { remote } from "electron"
+import NotificationPolyfill from "electron-notification-polyfill"
 
 import React, { Component } from "react"
 import { observer, inject } from "mobx-react"
@@ -20,6 +24,17 @@ const ignoreRules = ignores.map((name) => {
 });
 
 const { dialog } = remote;
+
+const Notification = (process.platform === "win32" && parseFloat(os.release()) < 10) ?
+    NotificationPolyfill : window.Notification;
+
+const emojs = {
+	happy: path.join(__dirname, "../imgs/happy.png"),
+	sad: path.join(__dirname, "../imgs/sad.png"),
+	embarrassed: path.join(__dirname, "../imgs/embarrassed.png")
+};
+
+let notification;
 
 @inject([
 	"store"
@@ -160,21 +175,6 @@ class FileType extends Component {
 		commonStore.modifyFileExt(value);
 	}
 
-	@autobind
-	_chooseFile() {
-		const { commonStore } = this.props.store;
-		 dialog.showOpenDialog({
-            type: "question",
-            properties: ["openDirectory"],
-            message: "请选择文件或者目录"
-        }, (resp) => {
-        	if (resp.length) {
-        		commonStore.selectDir(resp[0]);
-        	} else {
-        	}
-        });
-	}
-
 	render() {
 		const { fileExt, dirPath } = this.props.store.commonStore;
 		return (
@@ -191,12 +191,60 @@ class FileType extends Component {
 				      	</RadioGroup>
 					</div>
 				</div>
+  			</div>
+		);
+	}
+}
+
+@inject([
+	"store"
+])
+@observer
+class ChooseDir extends Component {
+	constructor(props) {
+		super(props);
+	}
+
+	@autobind
+	_chooseFile() {
+		const { commonStore } = this.props.store;
+		 dialog.showOpenDialog({
+            type: "question",
+            properties: ["openDirectory"],
+            message: "请选择文件所在目录"
+        }, (resp) => {
+        	if (resp && resp.length) {
+        		commonStore.selectDir(resp[0]);
+        	} else {
+        		notification = new Notification("px2rem", {
+	                body: "请先选择要处理文件的所在目录!",
+	                icon: emojs.embarrassed
+        		});
+        	}
+        });
+	}
+
+	@autobind
+	_handleChange(value) {
+		const { commonStore } = this.props.store;
+	}
+
+	@autobind
+	_handleSwitch(value) {
+		const { commonStore } = this.props.store;
+		commonStore.toggleCompress(value);
+	}
+
+	render() {
+		const { dirPath, fileName, compress } = this.props.store.commonStore;
+		return (
+  			<div className="filter-rows">
 				<div className="filter-item">
 					<label className="left-label">
-						选择文件(夹)
+						选择目录
 					</label>
-					<div className="right-select select-display">
-						<Button type="primary" onClick={this._chooseFile}>选择文件</Button>
+					<div className="right-select">
+						<Button type="primary" onClick={this._chooseFile}>请选择</Button>
 						{
 							dirPath.length > 0
 							?
@@ -217,6 +265,99 @@ class FileType extends Component {
 	"store"
 ])
 @observer
+class FileCompressZip extends Component {
+	constructor(props) {
+		super(props);
+	}
+
+	@autobind
+	_chooseFile() {
+		const { commonStore } = this.props.store;
+		 dialog.showOpenDialog({
+            type: "question",
+            properties: ["openDirectory"],
+            message: "请选择文件压缩后保存的目录"
+        }, (resp) => {
+        	if (resp && resp.length) {
+        		commonStore.selectDistDir(resp[0]);
+        	} else {
+				notification = new Notification("px2rem", {
+	                body: "请先选择文件压缩后保存的目录!",
+	                icon: emojs.embarrassed
+        		});
+        	}
+        });
+	}
+
+	@autobind
+	_handleChange(e) {
+		const { commonStore } = this.props.store;
+		let { value } = e.target;
+		commonStore.inputFileName(value);
+	}
+
+	@autobind
+	_handleSwitch(value) {
+		const { commonStore } = this.props.store;
+		commonStore.toggleCompress(value);
+	}
+
+	render() {
+		const { distPath, fileName, compress } = this.props.store.commonStore;
+		return (
+  			<div className="filter-rows">
+				<div className="filter-item">
+					<label className="left-label">
+						合并压缩
+					</label>
+					<div className="right-select">
+						<Switch className="right-select" defaultChecked={ false } onChange={this._handleSwitch}/>
+					</div>
+				</div>
+				{
+					compress
+					?
+					(
+						<div>
+							<div className="filter-item">
+								<label className="left-label">
+									保存文件名
+								</label>
+								<div className="right-select">
+									<Input value={ fileName } onChange={ this._handleChange } />
+								</div>
+							</div>
+							<div className="filter-item">
+								<label className="left-label">
+									选择目录
+								</label>
+								<div className="right-select">
+									<Button type="primary" onClick={this._chooseFile}>请选择</Button>
+									{
+										distPath.length > 0
+										?
+										(
+											<span className="select-result" title={ "您选择的目录为:" + distPath }>{ distPath }</span>
+										)
+										:
+										null
+									}
+								</div>
+							</div>
+						</div>
+					)
+					:
+					null
+				}
+  			</div>
+		);
+	}
+}
+
+@inject([
+	"store"
+])
+@observer
 class Tranformer extends Component {
   	constructor(props) {
   		super(props);
@@ -228,18 +369,41 @@ class Tranformer extends Component {
   	@autobind
   	async _tranform() {
   		const { commonStore, filterStore } = this.props.store,
-  			{ dirPath, width, scale, fileExt, compress, fileName } = commonStore,
+  			{ dirPath, width, scale, fileExt, compress, fileName, distPath } = commonStore,
   			{ filterList } = filterStore;
   		let tranformer, resp;
+  		if(!dirPath) {
+			notification = new Notification("px2rem", {
+                body: "请先选择要处理文件的所在目录!",
+                icon: emojs.embarrassed
+    		});
+  			return;
+  		}
+  		if(compress && !distPath) {
+			notification = new Notification("px2rem", {
+                body: "请先选择文件压缩后保存的目录!",
+                icon: emojs.embarrassed
+    		});
+  			return;
+  		}
   		this.setState({
   			tranforming: true
   		});
-  		tranformer = new TransformCalcultor({ dirPath, width, scale, fileExt, filterList, fileName });
+  		tranformer = new TransformCalcultor({ dirPath, width, scale, fileExt, filterList, fileName, distPath });
   		resp = await tranformer.tranform();
-  		if(resp) {
-
+		this.setState({
+  			tranforming: false
+  		});
+  		if(resp.success) {
+			notification = new Notification("px2rem", {
+				body: "执行成功!",
+                icon: emojs.happy
+    		});
   		} else {
-  			
+  			notification = new Notification("px2rem", {
+                body: "执行失败!",
+                icon: emojs.sad
+            });
   		}
   	}
 
@@ -250,6 +414,8 @@ class Tranformer extends Component {
 	      		<Filters />
 	      		<Scales />
 	      		<FileType />
+	      		<ChooseDir />
+	      		<FileCompressZip />
 	      		<div className="button-container">
 	      			<Button type="primary" size="large" onClick={this._tranform}>开始转换</Button>
 	      		</div>

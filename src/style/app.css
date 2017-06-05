@@ -18,7 +18,7 @@
 .filter-rows .filter-item {
     width: 100%;
     padding: 5px 0;
-    line-height: 30px;
+    line-height: 40px;
     font-size: 14px;
 }
 
@@ -43,13 +43,17 @@
 
 .filter-rows .filter-item .right-select .select-result {
     display: inline-block;
-    width: 100px;
+    width: 150px;
     height: 28px;
     font-size: 14px;
     line-height: 28px;
     overflow: hidden;
-    margin: 0 0 0 20px;
+    margin: 0 0 -9px 20px;
     word-break: keep-all;
+}
+
+.filter-rows .filter-item .right-select .save-name {
+	width: 100px;
 }
 
 .app-container .button-container {
