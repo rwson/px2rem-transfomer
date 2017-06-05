@@ -1,9 +1,12 @@
+import { remote } from "electron"
+
 import React, { Component } from "react"
 import { observer, inject } from "mobx-react"
 import * as uuid from "node-uuid"
 import autobind from "autobind"
 import { Switch, Select, Input, Button, Radio, Spin } from "antd"
 
+import TransformCalcultor from "../TransformCalcultor"
 import { ignores } from "../config";
 
 const { Option } = Select,
@@ -15,6 +18,8 @@ const ignoreRules = ignores.map((name) => {
 		id: uuid.v4()
 	};
 });
+
+const { dialog } = remote;
 
 @inject([
 	"store"
@@ -40,14 +45,14 @@ class Filters extends Component {
 
 	@autobind
 	_handleChange(value) {
-		const { filterStore } = this.props;
+		const { filterStore } = this.props.store;
 		filterStore.resetFilters();
 		filterStore.addFilter(value);
 	}
 
 	@autobind
 	_handleSwitch(showOptions) {
-		const { filterStore } = this.props;
+		const { filterStore } = this.props.store;
 		this.setState({
 			showOptions
 		});
@@ -155,8 +160,23 @@ class FileType extends Component {
 		commonStore.modifyFileExt(value);
 	}
 
+	@autobind
+	_chooseFile() {
+		const { commonStore } = this.props.store;
+		 dialog.showOpenDialog({
+            type: "question",
+            properties: ["openDirectory"],
+            message: "请选择文件或者目录"
+        }, (resp) => {
+        	if (resp.length) {
+        		commonStore.selectDir(resp[0]);
+        	} else {
+        	}
+        });
+	}
+
 	render() {
-		const { fileExt } = this.props.store.commonStore;
+		const { fileExt, dirPath } = this.props.store.commonStore;
 		return (
   			<div className="filter-rows">
 				<div className="filter-item">
@@ -169,6 +189,23 @@ class FileType extends Component {
 					        <Radio value="less">less</Radio>
 					        <Radio value="sass">sass</Radio>
 				      	</RadioGroup>
+					</div>
+				</div>
+				<div className="filter-item">
+					<label className="left-label">
+						选择文件(夹)
+					</label>
+					<div className="right-select select-display">
+						<Button type="primary" onClick={this._chooseFile}>选择文件</Button>
+						{
+							dirPath.length > 0
+							?
+							(
+								<span className="select-result" title={ "您选择的目录为:" + dirPath }>{ dirPath }</span>
+							)
+							:
+							null
+						}
 					</div>
 				</div>
   			</div>
@@ -189,11 +226,21 @@ class Tranformer extends Component {
   	}
 
   	@autobind
-  	_tranform() {
+  	async _tranform() {
+  		const { commonStore, filterStore } = this.props.store,
+  			{ dirPath, width, scale, fileExt, compress, fileName } = commonStore,
+  			{ filterList } = filterStore;
+  		let tranformer, resp;
   		this.setState({
   			tranforming: true
   		});
-  		console.log(this.props);
+  		tranformer = new TransformCalcultor({ dirPath, width, scale, fileExt, filterList, fileName });
+  		resp = await tranformer.tranform();
+  		if(resp) {
+
+  		} else {
+  			
+  		}
   	}
 
   	render() {

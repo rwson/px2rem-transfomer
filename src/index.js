@@ -6,7 +6,7 @@ import App from "components/App"
 import { filterStore, commonStore } from "stores"
 
 import "antd/dist/antd.css"
-import "css/app.css"
+import "style/app.css"
 
 const store = {
 	filterStore,

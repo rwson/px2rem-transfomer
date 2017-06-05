@@ -31,7 +31,8 @@
     "stylus-loader": "^2.4.0",
     "url-loader": "^0.5.7",
     "webpack": "^1.14.0",
-    "webpack-dev-server": "^1.16.2"
+    "webpack-dev-server": "^1.16.2",
+    "webpack-node-externals": "^1.6.0"
   },
   "dependencies": {
     "R": "0.0.1",
@@ -39,8 +40,12 @@
     "autobind": "^1.0.3",
     "classname": "0.0.0",
     "css": "^2.2.1",
+    "cssmin": "^0.4.3",
+    "dir-files": "^1.0.0-rc.5",
+    "fs-extra-promise": "^1.0.1",
     "mobx": "^3.1.10",
     "mobx-react": "^4.1.8",
-    "node-uuid": "^1.4.8"
+    "node-uuid": "^1.4.8",
+    "ramda": "^0.24.0"
   }
 }

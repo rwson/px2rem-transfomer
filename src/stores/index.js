@@ -51,6 +51,9 @@ class CommonStore {
 	@observable
 	width = 750;
 
+	@observable
+	dirPath = "";
+
 	@action
 	modifyScale(scale) {
 		this.scale = scale;
@@ -64,6 +67,11 @@ class CommonStore {
 	@action
 	modifyFileExt(ext) {
 		this.fileExt = ext;
+	}
+
+	@action
+	selectDir(dir) {
+		this.dirPath = dir;
 	}
 }
 
