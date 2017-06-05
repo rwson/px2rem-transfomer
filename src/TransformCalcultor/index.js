@@ -6,6 +6,8 @@ import cssmin from "cssmin"
 import R from "ramda"
 import toRegExp from "str-to-regexp"
 
+const numPxUnitReg = /[0-9]+([.]{1}[0-9]+){0,1}px/;
+
 export default class TransformCalcultor {
     constructor({ dirPath, width, scale, fileExt, filterList, fileName, distPath }) {
         this.dirPath = dirPath;
@@ -80,7 +82,11 @@ export default class TransformCalcultor {
                 ast = result.stylesheet;
                 if (ast.rules.length) {
                     ast.rules.forEach((rule) => {
-                        console.log(rule);
+                        rule.declarations.forEach((dec) => {
+                            if (!filterList.includes(dec.property)) {
+                                
+                            }
+                        });
                     });
                 }
             }
