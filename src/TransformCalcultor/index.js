@@ -6,16 +6,16 @@ import cssmin from "cssmin"
 import R from "ramda"
 import toRegExp from "str-to-regexp"
 
-const numPxUnitReg = /[0-9]+([.]{1}[0-9]+){0,1}px/;
+const numPxUnitReg = /[0-9]+([.]{1}[0-9]+){0,1}px/g;
 
 export default class TransformCalcultor {
     constructor({ dirPath, width, scale, fileExt, filterList, fileName, distPath }) {
         this.dirPath = dirPath;
         this.fileExt = `.${fileExt}`;
         this.fileExtReg = toRegExp(`${this.fileExt}$`);
-        this.filterList = filterList.filter((item) => item !== undefined);
+        this.ignores = filterList.filter((item) => item !== undefined);
         this.fileName = fileName;
-        this.base = R.divide(this.width, R.multiply(10, scale));
+        this.base = R.divide(width, 10);
         this.files = [];
         this.distPath = distPath;
     }
@@ -72,8 +72,8 @@ export default class TransformCalcultor {
     }
 
     async px2rem() {
-        let str, parsed, ast, result;
-    	const { base, files, filterList } = this;
+        let str, parsed, ast, result, value, matches;
+    	const { base, files, ignores } = this;
         try {
             for (let src of files) {
                 str = await fse.readFileAsync(src);
@@ -82,16 +82,25 @@ export default class TransformCalcultor {
                 ast = result.stylesheet;
                 if (ast.rules.length) {
                     ast.rules.forEach((rule) => {
-                        rule.declarations.forEach((dec) => {
-                            if (!filterList.includes(dec.property)) {
-                                
-                            }
-                        });
+                        if (rule.declarations && rule.declarations.length) {
+                            rule.declarations.forEach((dec) => {
+                                if (!ignores.includes(dec.property)) {
+                                    value = dec.value;
+                                    dec.value = value.replace(numPxUnitReg, (str) => {
+                                        console.log(str);
+                                        console.log(`${R.divide(parseFloat(str), base).toFixed(2)}rem`);
+                                        return `${R.divide(parseFloat(str), base).toFixed(2)}rem`;
+                                    });
+                                }
+                            });
+                        }
                     });
                 }
+                console.log(css.stringify(result));
             }
             return true;
         } catch (e) {
+            console.log(e);
             return false;
         }
     }
