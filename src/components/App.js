@@ -225,6 +225,26 @@ class ChooseDir extends Component {
 	}
 
 	@autobind
+	_chooseDistPath() {
+		const { commonStore } = this.props.store;
+		 dialog.showOpenDialog({
+            type: "question",
+            properties: ["openDirectory"],
+            message: "请先选择处理后保存的目录"
+        }, (resp) => {
+        	if (resp && resp.length) {
+        		commonStore.selectDistDir(resp[0]);
+        	} else {
+				notification = new Notification("px2rem", {
+	                body: "请先选择处理后保存的目录!",
+	                icon: emojs.embarrassed
+        		});
+        	}
+        });
+	}
+
+
+	@autobind
 	_handleChange(value) {
 		const { commonStore } = this.props.store;
 	}
@@ -236,12 +256,12 @@ class ChooseDir extends Component {
 	}
 
 	render() {
-		const { dirPath, fileName, compress } = this.props.store.commonStore;
+		const { dirPath, fileName, compress, distPath } = this.props.store.commonStore;
 		return (
   			<div className="filter-rows">
 				<div className="filter-item">
 					<label className="left-label">
-						选择目录
+						选择所在目录
 					</label>
 					<div className="right-select">
 						<Button type="primary" onClick={this._chooseFile}>请选择</Button>
@@ -256,6 +276,23 @@ class ChooseDir extends Component {
 						}
 					</div>
 				</div>
+				<div className="filter-item">
+					<label className="left-label">
+						选择释放目录
+					</label>
+					<div className="right-select">
+						<Button type="primary" onClick={this._chooseDistPath}>请选择</Button>
+						{
+							distPath.length > 0
+							?
+							(
+								<span className="select-result" title={ "您选择的目录为:" + distPath }>{ distPath }</span>
+							)
+							:
+							null
+						}
+					</div>
+				</div>				
   			</div>
 		);
 	}
@@ -268,25 +305,6 @@ class ChooseDir extends Component {
 class FileCompressZip extends Component {
 	constructor(props) {
 		super(props);
-	}
-
-	@autobind
-	_chooseFile() {
-		const { commonStore } = this.props.store;
-		 dialog.showOpenDialog({
-            type: "question",
-            properties: ["openDirectory"],
-            message: "请选择文件压缩后保存的目录"
-        }, (resp) => {
-        	if (resp && resp.length) {
-        		commonStore.selectDistDir(resp[0]);
-        	} else {
-				notification = new Notification("px2rem", {
-	                body: "请先选择文件压缩后保存的目录!",
-	                icon: emojs.embarrassed
-        		});
-        	}
-        });
 	}
 
 	@autobind
@@ -327,23 +345,6 @@ class FileCompressZip extends Component {
 									<Input value={ fileName } onChange={ this._handleChange } />
 								</div>
 							</div>
-							<div className="filter-item">
-								<label className="left-label">
-									选择目录
-								</label>
-								<div className="right-select">
-									<Button type="primary" onClick={this._chooseFile}>请选择</Button>
-									{
-										distPath.length > 0
-										?
-										(
-											<span className="select-result" title={ "您选择的目录为:" + distPath }>{ distPath }</span>
-										)
-										:
-										null
-									}
-								</div>
-							</div>
 						</div>
 					)
 					:
@@ -379,9 +380,9 @@ class Tranformer extends Component {
     		});
   			return;
   		}
-  		if(compress && !distPath) {
+  		if(!distPath) {
 			notification = new Notification("px2rem", {
-                body: "请先选择文件压缩后保存的目录!",
+                body: "请先选择处理后保存的目录!",
                 icon: emojs.embarrassed
     		});
   			return;

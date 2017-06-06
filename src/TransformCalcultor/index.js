@@ -24,10 +24,11 @@ export default class TransformCalcultor {
      * 开始转换
      */
     async tranform() {
-    	let walkRes, tranformRes;
+        const { fileExt } = this;
+        let walkRes, tranformRes;
         walkRes = await this.walk();
         if (!walkRes) {
-        	return {
+            return {
                 success: false
             };
         }
@@ -71,68 +72,98 @@ export default class TransformCalcultor {
         });
     }
 
+    /**
+     * px转成rem单位处理并写入文件
+     */
     async px2rem() {
-        let str, parsed, ast, result, value, matches;
-    	const { base, files, ignores } = this;
+        const { base, files, ignores, distPath } = this;
+        let str, parsed, ast, result, value, matches, distfile;
         try {
             for (let src of files) {
+                distfile = path.join(distPath, path.basename(src));
                 str = await fse.readFileAsync(src);
                 str = str.toString("utf8");
                 result = css.parse(str);
                 ast = result.stylesheet;
                 if (ast.rules.length) {
                     ast.rules.forEach((rule) => {
-                        if (rule.declarations && rule.declarations.length) {
-                            rule.declarations.forEach((dec) => {
-                                if (!ignores.includes(dec.property)) {
-                                    value = dec.value;
-                                    dec.value = value.replace(numPxUnitReg, (str) => {
-                                        console.log(str);
-                                        console.log(`${R.divide(parseFloat(str), base).toFixed(2)}rem`);
-                                        return `${R.divide(parseFloat(str), base).toFixed(2)}rem`;
+                        switch (rule.type) {
+                            case "rule":
+                                if (rule.declarations && rule.declarations.length) {
+                                    rule.declarations.forEach((dec) => {
+                                        if (!ignores.includes(dec.property)) {
+                                            value = dec.value;
+                                            dec.value = value.replace(numPxUnitReg, (str) => {
+                                                return `${R.divide(parseFloat(str), base).toFixed(2)}rem`;
+                                            });
+                                        }
                                     });
                                 }
-                            });
+                            break;
+                            case "media":
+                                if (rule.rules && rule.rules.length) {
+                                    rule.rules.forEach((sRule) => {
+                                        if (sRule.declarations && sRule.declarations.length) {
+                                            sRule.declarations.forEach((sDec) => {
+                                                if (!ignores.includes(sDec.property)) {
+                                                    value = sDec.value;
+                                                    sDec.value = value.replace(numPxUnitReg, (str) => {
+                                                        return `${R.divide(parseFloat(str), base).toFixed(2)}rem`;
+                                                    });
+                                                }
+                                            });
+                                        }
+                                    });
+                                }
+                            break;
+                            default:
+                            break;
                         }
                     });
                 }
-                console.log(css.stringify(result));
+                await fse.writeFileSync(distfile, css.stringify(result), {
+                    encoding: "utf8"
+                });
             }
             return true;
         } catch (e) {
-            console.log(e);
             return false;
         }
-    }
-
-    async minifyFiles() {
-        const { files } = this;
     }
 
     async buildToCss() {
         const { fileExt } = this;
         let res;
-        return new Promise((resolve, reject) => {
-            switch (fileExt.slice(1)) {
-                case "less":
-                    this.complieLess();
-                    break;
-                case "sass":
-                    this.complieSass();
-                    break;
-                default:
-                    break;
-            }
-            resolve(res);
-        });
+        switch (fileExt.slice(1)) {
+            case ".less":
+                res = await this.complieLess();
+                break;
+            case ".sass":
+                res = await this.complieSass();
+                break;
+            default:
+                break;
+        }
     }
 
+    /**
+     * 编译less
+     */
     async complieLess() {
         const { files } = this;
     }
 
+    /**
+     * 编译sass
+     */
     async complieSass() {
         const { files } = this;
     }
 
+    /**
+     * 压缩成单文件
+     */
+    async minifyFiles() {
+        const { files } = this;
+    }
 }
