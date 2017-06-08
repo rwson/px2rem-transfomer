@@ -1,8 +1,12 @@
 import path from "path"
+import cp from "child_process"
+
 import fse from "fs-extra-promise"
 import dirTree from "dir-tree-scanner"
 import css from "css"
 import cssmin from "cssmin"
+
+
 import R from "ramda"
 import toRegExp from "str-to-regexp"
 
@@ -17,6 +21,7 @@ export default class TransformCalcultor {
         this.fileName = fileName;
         this.base = R.divide(width, 10);
         this.files = [];
+        this.distfiles = [];
         this.distPath = distPath;
     }
 
@@ -24,25 +29,36 @@ export default class TransformCalcultor {
      * 开始转换
      */
     async tranform() {
-        const { fileExt } = this;
-        let walkRes, tranformRes;
+        const { fileExt, fileName } = this;
+        let mergeRes, walkRes, tranformRes;
         walkRes = await this.walk();
         if (!walkRes) {
             return {
-                success: false
+                success: false,
+                message: "文件遍历出错!"
             };
         }
         this.files = walkRes;
         tranformRes = await this.px2rem();
         if (!tranformRes) {
             return {
-                success: false
+                success: false,
+                message: "单位转换出错!"
             };
         }
+        if (fileName) {
+            mergeRes = await this.minifyFiles();
+            if (!mergeRes) {
+                return {
+                    success: false,
+                    message: "文件压缩出错!"
+                };
+            }
+        }
         return {
-            success: true
+            success: true,
+            message: "操作成功!"
         };
-        console.log(tranformRes);
     }
 
     /**
@@ -85,7 +101,7 @@ export default class TransformCalcultor {
                 str = str.toString("utf8");
                 result = css.parse(str);
                 ast = result.stylesheet;
-                if (ast.rules.length) {
+                if (ast.rules && ast.rules.length) {
                     ast.rules.forEach((rule) => {
                         switch (rule.type) {
                             case "rule":
@@ -99,7 +115,7 @@ export default class TransformCalcultor {
                                         }
                                     });
                                 }
-                            break;
+                                break;
                             case "media":
                                 if (rule.rules && rule.rules.length) {
                                     rule.rules.forEach((sRule) => {
@@ -115,15 +131,16 @@ export default class TransformCalcultor {
                                         }
                                     });
                                 }
-                            break;
+                                break;
                             default:
-                            break;
+                                break;
                         }
                     });
                 }
                 await fse.writeFileSync(distfile, css.stringify(result), {
                     encoding: "utf8"
                 });
+                this.distfiles.push(distfile);
             }
             return true;
         } catch (e) {
@@ -131,39 +148,30 @@ export default class TransformCalcultor {
         }
     }
 
-    async buildToCss() {
-        const { fileExt } = this;
-        let res;
-        switch (fileExt.slice(1)) {
-            case ".less":
-                res = await this.complieLess();
-                break;
-            case ".sass":
-                res = await this.complieSass();
-                break;
-            default:
-                break;
-        }
-    }
-
     /**
-     * 编译less
-     */
-    async complieLess() {
-        const { files } = this;
-    }
-
-    /**
-     * 编译sass
-     */
-    async complieSass() {
-        const { files } = this;
-    }
-
-    /**
-     * 压缩成单文件
+     * 压缩文件
      */
     async minifyFiles() {
-        const { files } = this;
+        const { distfiles, distPath, fileName } = this,
+        mergedPath = path.join(distPath, fileName);
+        let cssStrs = [],
+            tmp;
+        try {
+            for (let src of distfiles) {
+                tmp = await fse.readFileAsync(src);
+                tmp = tmp.toString("utf8");
+                cssStrs.push(tmp);
+                await fse.removeSync(src);
+            }
+            cssStrs = cssStrs.join("\n");
+            cssStrs = cssmin(cssStrs);
+            await fse.writeFileSync(mergedPath, cssStrs, {
+                encoding: "utf8"
+            });
+            return true;
+        } catch (e) {
+            console.log(e);
+            return false;
+        }
     }
 }

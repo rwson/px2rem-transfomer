@@ -186,8 +186,6 @@ class FileType extends Component {
 					<div className="right-select">
 						<RadioGroup onChange={ this._handleChange } value={ fileExt }>
 					        <Radio value="css">css</Radio>
-					        <Radio value="less">less</Radio>
-					        <Radio value="sass">sass</Radio>
 				      	</RadioGroup>
 					</div>
 				</div>
@@ -318,6 +316,9 @@ class FileCompressZip extends Component {
 	_handleSwitch(value) {
 		const { commonStore } = this.props.store;
 		commonStore.toggleCompress(value);
+		if(!commonStore.compress) {
+			commonStore.inputFileName("");
+		}
 	}
 
 	render() {
@@ -414,7 +415,6 @@ class Tranformer extends Component {
 			<div className="app-container">
 	      		<Filters />
 	      		<Scales />
-	      		<FileType />
 	      		<ChooseDir />
 	      		<FileCompressZip />
 	      		<div className="button-container">
